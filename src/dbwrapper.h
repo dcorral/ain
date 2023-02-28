@@ -206,16 +206,23 @@ public:
 //    return true;
 //}
 
+struct CLevelDBOptions {
+private:
+    leveldb::Options options{};
+    leveldb::Env *env{};
+public:
+    CLevelDBOptions(size_t nCacheSize, bool fMemory);
+    ~CLevelDBOptions();
 
-class CDBWrapper
-{
+    const leveldb::Options &Get() { return options; }
+};
+
+class CDBWrapper {
     friend const std::vector<unsigned char>& dbwrapper_private::GetObfuscateKey(const CDBWrapper &w);
 private:
-    //! custom environment this database is using (may be nullptr in case of default environment)
-    leveldb::Env* penv;
 
-    //! database options used
-    leveldb::Options options;
+    //! database options used and environment
+    std::shared_ptr<CLevelDBOptions> options;
 
     //! options used when reading from the database
     leveldb::ReadOptions readoptions;
@@ -230,7 +237,7 @@ private:
     leveldb::WriteOptions syncoptions;
 
     //! the database itself
-    leveldb::DB* pdb;
+    std::shared_ptr<leveldb::DB> pdb;
 
     //! the name of this database
     std::string m_name;
@@ -258,8 +265,7 @@ public:
     CDBWrapper(const fs::path& path, size_t nCacheSize, bool fMemory = false, bool fWipe = false, bool obfuscate = false);
     ~CDBWrapper();
 
-    CDBWrapper(const CDBWrapper&) = delete;
-    CDBWrapper& operator=(const CDBWrapper&) = delete;
+    CDBWrapper Snapshot();
 
     template <typename K, typename V>
     bool Read(const K& key, V& value) const
