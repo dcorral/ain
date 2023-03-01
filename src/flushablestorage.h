@@ -176,9 +176,21 @@ public:
         return db.IsEmpty();
     }
 
+    CStorageLevelDB Snapshot() {
+        return CStorageLevelDB{db};
+    }
+
 private:
     CDBWrapper db;
     CDBBatch batch;
+
+    // Instantiate with a copy of CDBWrapper, but using a snapshot
+    // This starts with a cleared out batch. We can iterate over the batch
+    // and copy into the new batch, should the need arise, for but now,
+    // it's a view over the committed data.
+    explicit CStorageLevelDB(CDBWrapper &db) :
+            db(db.Snapshot()),
+            batch({this->db}) {}
 };
 
 // Flashable storage
