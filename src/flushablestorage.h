@@ -450,7 +450,7 @@ CStorageIteratorWrapper<By, KeyType> NewKVIterator(const KeyType& key, MapKV& ma
 class CStorageView {
 public:
     CStorageView() = default;
-    CStorageView(CStorageKV * st) : storage(st) {}
+    CStorageView(CStorageKV *st) : storage(st) {}
     virtual ~CStorageView() = default;
 
     template<typename KeyType>
