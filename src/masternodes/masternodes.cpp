@@ -762,25 +762,28 @@ CCustomCSView::CCustomCSView() {
     CheckPrefixes();
 }
 
-CCustomCSView::CCustomCSView(CStorageKV &st)
-    : CStorageView(new CFlushableStorageKV(st)) {
+CCustomCSView::CCustomCSView(CStorageKV *st, CHistoryWriters *writers) : CStorageView(st), writers(*writers) {
     CheckPrefixes();
 }
 
-// cache-upon-a-cache (not a copy!) constructor
-CCustomCSView::CCustomCSView(CCustomCSView &other)
-    : CStorageView(new CFlushableStorageKV(other.DB())),
-      writers(other.GetHistoryWriters()) {
-    CheckPrefixes();
+CCustomCSView CCustomCSView::CreateFlushableLayer(bool passWriters = true) {
+    // disabling passWriters will not pass any of the history writers to the
+    // new layer, any changes made will not be written to the history database
+    if (passWriters)
+        return CCustomCSView{new CFlushableStorageKV(this->DB()), new CHistoryWriters{this->writers}};
+
+    return CCustomCSView{new CFlushableStorageKV(this->DB()), nullptr};
 }
 
-CCustomCSView::CCustomCSView(CCustomCSView &other,
-                             CAccountHistoryStorage *historyView,
-                             CBurnHistoryStorage *burnView,
-                             CVaultHistoryStorage *vaultView)
-        : CStorageView(new CFlushableStorageKV(other.DB())),
-          writers(historyView, burnView, vaultView) {
-    CheckPrefixes();
+CCustomCSView CCustomCSView::Snapshot() {
+    auto &db = this->DB();
+    auto *levelDbStorage = dynamic_cast<CStorageLevelDB*>(&db);
+    if (levelDbStorage) {
+        LogPrintf("DEBUG:: Creating new snapped view\n");
+        auto snappedStore = levelDbStorage->Snapshot();
+        return CCustomCSView{new CFlushableStorageKV(snappedStore), new CHistoryWriters{this->writers}};
+    }
+    throw std::runtime_error("Error opening LevelDB database");
 }
 
 int CCustomCSView::GetDbVersion() const {

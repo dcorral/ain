@@ -496,16 +496,20 @@ public:
     static constexpr const int DbVersion = 1;
 
     CCustomCSView();
-    explicit CCustomCSView(CStorageKV &st);
+    explicit CCustomCSView(CStorageKV *st, CHistoryWriters *writers);
 
     // cache-upon-a-cache (not a copy!) constructor
-    CCustomCSView(CCustomCSView &other);
+    CCustomCSView(CCustomCSView &other) = delete;
     CCustomCSView(CCustomCSView &other,
                   CAccountHistoryStorage *historyView,
                   CBurnHistoryStorage *burnView,
-                  CVaultHistoryStorage *vaultView);
+                  CVaultHistoryStorage *vaultView) = delete;
+    CCustomCSView(CCustomCSView &&other) = default;
 
     ~CCustomCSView() = default;
+
+    CCustomCSView CreateFlushableLayer(bool passWriters);
+    CCustomCSView Snapshot();
 
     // cause depends on current mns:
     CTeamView::CTeam CalcNextTeam(int height, const uint256 &stakeModifier);

@@ -136,8 +136,10 @@ private:
 // LevelDB glue layer storage
 class CStorageLevelDB : public CStorageKV {
 public:
-    explicit CStorageLevelDB(const fs::path& dbName, std::size_t cacheSize, bool fMemory = false, bool fWipe = false)
-        : db{dbName, cacheSize, fMemory, fWipe}, batch(db) {}
+    explicit CStorageLevelDB(const fs::path &dbName, std::size_t cacheSize, bool fMemory = false, bool fWipe = false)
+            : db{dbName, cacheSize, fMemory, fWipe}, batch(db) {}
+    CStorageLevelDB() = delete;
+    CStorageLevelDB(CStorageLevelDB&&) = default;
     ~CStorageLevelDB() override = default;
 
     bool Exists(const TBytes& key) const override {
