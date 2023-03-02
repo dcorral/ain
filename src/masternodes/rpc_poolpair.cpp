@@ -268,7 +268,7 @@ UniValue listpoolpairs(const JSONRPCRequest &request) {
         [&](DCT_ID const &id, CPoolPair pool) {
             const auto token = pcustomcsview->GetToken(id);
             if (token) {
-                ret.pushKVs(poolToJSON(*pcustomcsview, id, pool, *token, verbose));
+                ret.pushKVs(poolToJSON(pcustomcsview->CreateFlushableLayer(), id, pool, *token, verbose));
                 limit--;
             }
 
@@ -310,7 +310,7 @@ UniValue getpoolpair(const JSONRPCRequest &request) {
     if (token) {
         auto pool = pcustomcsview->GetPoolPair(id);
         if (pool) {
-            auto res = poolToJSON(*pcustomcsview, id, *pool, *token, verbose);
+            auto res = poolToJSON(pcustomcsview->CreateFlushableLayer(), id, *pool, *token, verbose);
             return GetRPCResultCache().Set(request, res);
         }
         throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Pool not found");
@@ -1188,7 +1188,7 @@ UniValue testpoolswap(const JSONRPCRequest &request) {
     Res res = Res::Ok();
     {
         LOCK(cs_main);
-        CCustomCSView mnview_dummy(*pcustomcsview);  // create dummy cache for test state writing
+        auto mnview_dummy = pcustomcsview->CreateFlushableLayer();  // create dummy cache for test state writing
 
         uint32_t targetHeight = ::ChainActive().Height() + 1;
         auto poolSwap         = CPoolSwap({poolSwapMsg, targetHeight});

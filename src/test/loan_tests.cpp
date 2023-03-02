@@ -268,7 +268,7 @@ BOOST_AUTO_TEST_CASE(high_precision_interest_rate_to_string_tests)
 
 BOOST_AUTO_TEST_CASE(loan_interest_rate)
 {
-    CCustomCSView mnview(*pcustomcsview);
+    auto mnview = pcustomcsview->CreateFlushableLayer();
 
     const std::string id("sch1");
     CreateScheme(mnview, id, 150, 2 * COIN);
@@ -316,7 +316,7 @@ BOOST_AUTO_TEST_CASE(loan_total_interest_calculation)
     // Activate negative interest rate
     const_cast<int&>(Params().GetConsensus().FortCanningGreatWorldHeight) = 1;
 
-    CCustomCSView mnview(*pcustomcsview);
+    auto mnview = pcustomcsview->CreateFlushableLayer();
 
     const std::string scheme_id("sch1");
     CreateScheme(mnview, scheme_id, 150, 0);
@@ -382,7 +382,7 @@ BOOST_AUTO_TEST_CASE(loan_total_interest_calculation)
 
 BOOST_AUTO_TEST_CASE(collateralization_ratio)
 {
-    CCustomCSView mnview(*pcustomcsview);
+    auto mnview = pcustomcsview->CreateFlushableLayer();
 
     const std::string id("sch1");
     CreateScheme(mnview, id, 150, 2 * COIN);

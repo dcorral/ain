@@ -475,7 +475,7 @@ static void ProcessLoanEvents(const CBlockIndex* pindex, CCustomCSView& cache, c
     }
 
     if (!loanDestruction.empty()) {
-        CCustomCSView viewCache(cache);
+        CCustomCSView viewCache  = cache.CreateFlushableLayer();
         auto defaultLoanScheme = cache.GetDefaultLoanScheme();
         cache.ForEachVault([&](const CVaultId& vaultId, CVaultData vault) {
             if (!cache.GetLoanScheme(vault.schemeId)) {
@@ -927,7 +927,7 @@ static void ProcessGovEvents(const CBlockIndex* pindex, CCustomCSView& cache, co
     auto storedGovVars = cache.GetStoredVariables(pindex->nHeight);
     for (const auto& var : storedGovVars) {
         if (var) {
-            CCustomCSView govCache(cache);
+            CCustomCSView govCache  = cache.CreateFlushableLayer();
             // Add to existing ATTRIBUTES instead of overwriting.
             if (var->GetName() == "ATTRIBUTES") {
                 auto govVar = cache.GetAttributes();
@@ -1052,7 +1052,7 @@ static void ProcessTokenToGovVar(const CBlockIndex* pindex, CCustomCSView& cache
             ++collateralCount;
         }
 
-        CCustomCSView govCache(cache);
+        CCustomCSView govCache  = cache.CreateFlushableLayer();
         if (ApplyGovVars(govCache, *pindex, attrsFirst) && ApplyGovVars(govCache, *pindex, attrsSecond)) {
             govCache.Flush();
 
@@ -1108,7 +1108,7 @@ void ConsolidateRewards(CCustomCSView &view, int height,
         // due to the segregated areas of operation.
         boost::asio::post(workerPool, [&, &account = owner]() {
             if (interruptOnShutdown && ShutdownRequested()) return;
-            auto tempView = std::make_unique<CCustomCSView>(view);
+            auto tempView = std::make_unique<CCustomCSView>(view.CreateFlushableLayer());
             tempView->CalculateOwnerRewards(account, height);
 
             boost::asio::post(mergeWorker, [&, tempView = std::move(tempView)]() {
@@ -1696,7 +1696,7 @@ static void ProcessTokenSplits(const CBlock& block, const CBlockIndex* pindex, C
             continue;
         }
 
-        auto view{cache};
+        auto view = cache.CreateFlushableLayer();
 
         // Refund affected future swaps
         auto res = attributes->RefundFuturesContracts(view, std::numeric_limits<uint32_t>::max(), id);
@@ -2287,7 +2287,7 @@ static void ProcessGrandCentralEvents(const CBlockIndex* pindex, CCustomCSView& 
 }
 
 void ProcessDeFiEvent(const CBlock &block, const CBlockIndex* pindex, CCustomCSView& mnview, const CCoinsViewCache& view, const CChainParams& chainparams, const CreationTxs &creationTxs) {
-    CCustomCSView cache(mnview);
+    CCustomCSView cache = mnview.CreateFlushableLayer();
 
     // calculate rewards to current block
     ProcessRewardEvents(pindex, cache, chainparams);

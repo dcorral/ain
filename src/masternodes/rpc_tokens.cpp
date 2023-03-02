@@ -601,7 +601,7 @@ UniValue getcustomtx(const JSONRPCRequest& request)
     if (!actualHeight) {
 
         LOCK(cs_main);
-        CCustomCSView mnview(*pcustomcsview);
+        CCustomCSView mnview = pcustomcsview->CreateFlushableLayer();
         CCoinsViewCache view(&::ChainstateActive().CoinsTip());
 
         auto res = ApplyCustomTx(mnview, view, *tx, Params().GetConsensus(), nHeight);

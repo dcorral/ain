@@ -508,7 +508,10 @@ public:
 
     ~CCustomCSView() = default;
 
-    CCustomCSView CreateFlushableLayer(bool passWriters);
+    CCustomCSView CreateFlushableLayer(bool passWriters = true);
+    CCustomCSView CreateFlushableLayer(CAccountHistoryStorage *historyView,
+                                       CBurnHistoryStorage *burnView,
+                                       CVaultHistoryStorage *vaultView);
     CCustomCSView Snapshot();
 
     // cause depends on current mns:

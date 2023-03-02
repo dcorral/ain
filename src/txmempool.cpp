@@ -560,7 +560,7 @@ CCustomCSView& CTxMemPool::accountsView()
 {
     if (!acview) {
         assert(pcustomcsview);
-        acview = std::make_unique<CCustomCSView>(*pcustomcsview);
+        acview = std::make_unique<CCustomCSView>(pcustomcsview->CreateFlushableLayer());
     }
     return *acview;
 }
@@ -647,7 +647,7 @@ void CTxMemPool::xcheck(const CCoinsViewCache *pcoins, CCustomCSView *mnview, co
     uint64_t checkTotal = 0;
     uint64_t innerUsage = 0;
 
-    CCustomCSView mnviewDuplicate(*mnview);
+    CCustomCSView mnviewDuplicate = mnview->CreateFlushableLayer();
     CCoinsViewCache mempoolDuplicate(const_cast<CCoinsViewCache*>(pcoins));
     const int64_t spendheight = GetSpendHeight(mempoolDuplicate);
 
@@ -1099,7 +1099,7 @@ void CTxMemPool::rebuildAccountsView(int height, const CCoinsViewCache& coinsCac
 
     CAmount txfee = 0;
     accountsView().Discard();
-    CCustomCSView viewDuplicate(accountsView());
+    auto viewDuplicate = accountsView().CreateFlushableLayer();
 
     setEntries staged;
     std::vector<CTransactionRef> vtx;

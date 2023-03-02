@@ -766,13 +766,19 @@ CCustomCSView::CCustomCSView(CStorageKV *st, CHistoryWriters *writers) : CStorag
     CheckPrefixes();
 }
 
-CCustomCSView CCustomCSView::CreateFlushableLayer(bool passWriters = true) {
+CCustomCSView CCustomCSView::CreateFlushableLayer(bool passWriters) {
     // disabling passWriters will not pass any of the history writers to the
     // new layer, any changes made will not be written to the history database
     if (passWriters)
         return CCustomCSView{new CFlushableStorageKV(this->DB()), new CHistoryWriters{this->writers}};
 
     return CCustomCSView{new CFlushableStorageKV(this->DB()), nullptr};
+}
+
+CCustomCSView CCustomCSView::CreateFlushableLayer(CAccountHistoryStorage *historyView,
+                                                  CBurnHistoryStorage *burnView,
+                                                  CVaultHistoryStorage *vaultView) {
+    return CCustomCSView{new CFlushableStorageKV(this->DB()), new CHistoryWriters{historyView, burnView, vaultView}};
 }
 
 CCustomCSView CCustomCSView::Snapshot() {

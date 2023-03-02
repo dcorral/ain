@@ -236,7 +236,7 @@ UniValue listcollateraltokens(const JSONRPCRequest& request) {
     if (auto res = GetRPCResultCache().TryGet(request)) return *res;
 
     UniValue ret(UniValue::VARR);
-    CCustomCSView view(*pcustomcsview);
+    CCustomCSView view = pcustomcsview->CreateFlushableLayer();
 
     view.ForEachLoanCollateralToken([&](const CollateralTokenKey &key, const uint256 &collTokenTx) {
         auto collToken = view.GetLoanCollateralToken(collTokenTx);
@@ -517,7 +517,7 @@ UniValue listloantokens(const JSONRPCRequest& request) {
 
     UniValue ret(UniValue::VARR);
 
-    CCustomCSView view(*pcustomcsview);
+    CCustomCSView view = pcustomcsview->CreateFlushableLayer();
 
     view.ForEachLoanToken([&](DCT_ID const & key, CLoanView::CLoanSetLoanTokenImpl loanToken) {
         ret.push_back(setLoanTokenToJSON(view, loanToken, key));
@@ -1324,7 +1324,7 @@ UniValue getloaninfo(const JSONRPCRequest& request) {
     UniValue ret{UniValue::VOBJ};
 
     LOCK(cs_main);
-    auto view = *pcustomcsview;
+    auto view = pcustomcsview->CreateFlushableLayer();
 
     auto height = ::ChainActive().Height() + 1;
 

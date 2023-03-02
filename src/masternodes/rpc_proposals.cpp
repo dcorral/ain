@@ -503,7 +503,7 @@ UniValue votegov(const JSONRPCRequest &request) {
     int targetHeight;
     CTxDestination ownerDest;
     {
-        CCustomCSView view(*pcustomcsview);
+        CCustomCSView view = pcustomcsview->CreateFlushableLayer();
 
         auto prop = view.GetProposal(propId);
         if (!prop) {
@@ -641,7 +641,7 @@ UniValue listgovproposalvotes(const JSONRPCRequest &request) {
             optionsObj = request.params[0].get_obj();
     }
 
-    CCustomCSView view(*pcustomcsview);
+    CCustomCSView view = pcustomcsview->CreateFlushableLayer();
 
     uint256 mnId;
     uint256 propId;
@@ -896,7 +896,7 @@ UniValue getgovproposal(const JSONRPCRequest &request) {
     RPCTypeCheck(request.params, {UniValue::VSTR}, true);
 
     auto propId = ParseHashV(request.params[0].get_str(), "proposalId");
-    CCustomCSView view(*pcustomcsview);
+    CCustomCSView view = pcustomcsview->CreateFlushableLayer();
     auto prop = view.GetProposal(propId);
     if (!prop) {
         throw JSONRPCError(RPC_INVALID_PARAMETER, strprintf("Proposal <%s> does not exist", propId.GetHex()));
@@ -1136,7 +1136,7 @@ UniValue listgovproposals(const JSONRPCRequest &request) {
     }
 
     UniValue ret{UniValue::VARR};
-    CCustomCSView view(*pcustomcsview);
+    CCustomCSView view = pcustomcsview->CreateFlushableLayer();
 
     using IdPropPair        = std::pair<CProposalId, CProposalObject>;
     using CycleEndHeightInt = int;
