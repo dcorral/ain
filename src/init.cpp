@@ -1778,7 +1778,7 @@ bool AppInitMain(InitInterfaces& interfaces)
                 pcustomcsDB.reset();
                 pcustomcsDB = std::make_unique<CStorageLevelDB>(GetDataDir() / "enhancedcs", nCustomCacheSize, false, fReset || fReindexChainState);
                 pcustomcsview.reset();
-                pcustomcsview = std::make_unique<CCustomCSView>(*pcustomcsDB.get(), new CHistoryWriters{});
+                pcustomcsview = std::make_unique<CCustomCSView>(*pcustomcsDB, *new CHistoryWriters{});
 
                 if (!fReset && !fReindexChainState) {
                     if (!pcustomcsDB->IsEmpty() && pcustomcsview->GetDbVersion() != CCustomCSView::DbVersion) {
