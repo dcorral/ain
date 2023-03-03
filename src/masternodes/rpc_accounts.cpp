@@ -2049,7 +2049,7 @@ UniValue getburninfo(const JSONRPCRequest& request) {
         nWorkers = height;
     }
 
-    const auto chunks = height / nWorkers;
+    const auto chunkSize = height / nWorkers;
 
     TaskGroup g;
     WorkerResultPool resultsPool{nWorkers};
@@ -2059,8 +2059,8 @@ UniValue getburninfo(const JSONRPCRequest& request) {
     auto i               = 0;
     while (processedHeight < height)
     {
-        auto startHeight = initialResult.height + (chunks * (i + 1));
-        auto stopHeight  = initialResult.height + (chunks * (i));
+        auto startHeight = initialResult.height + (chunkSize * (i + 1));
+        auto stopHeight  = initialResult.height + (chunkSize * (i));
 
         g.AddTask();
         boost::asio::post(pool, [startHeight, stopHeight, &g, &resultsPool] {
@@ -2143,8 +2143,8 @@ UniValue getburninfo(const JSONRPCRequest& request) {
             g.RemoveTask();
         });
 
-        // perfect accuracy: processedHeight += (startHeight > height) ? chunksRemainder : chunks;
-        processedHeight += chunks;
+        // perfect accuracy: processedHeight += (startHeight > height) ? chunksRemainder : chunkSize;
+        processedHeight += chunkSize;
         i++;
     }
 
