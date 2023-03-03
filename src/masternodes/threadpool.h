@@ -40,6 +40,37 @@ class TaskGroup {
         std::condition_variable cv;
 };
 
+template <typename T>
+class WorkerResultPool {
+    public:
+    explicit WorkerResultPool(size_t size) {
+        pool.reserve(size);
+        for (size_t i = 0; i < size; i++) {
+            pool.push_back(std::make_shared<T>());
+        }
+    }
+
+    std::shared_ptr<T> Acquire() {
+        CLockFreeGuard lock{syncFlag};
+        auto res = pool.back();
+        pool.pop_back();
+        return res;
+    }
+
+    void Release(std::shared_ptr<T> res) {
+        CLockFreeGuard lock{syncFlag};
+        pool.push_back(res);
+    }
+
+    std::vector<std::shared_ptr<T>> &GetContainer() {
+        return pool;
+    }
+
+    private:
+    std::atomic_bool syncFlag{};
+    std::vector<std::shared_ptr<T>> pool;
+};
+
 extern std::unique_ptr<TaskPool> DfTxTaskPool;
 
 #endif  // DEFI_MASTERNODES_THREADPOOL_H

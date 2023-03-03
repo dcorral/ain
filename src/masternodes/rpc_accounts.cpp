@@ -2014,36 +2014,6 @@ UniValue getburninfo(const JSONRPCRequest& request) {
         }
     }
 
-    class WorkerResultPool {
-      public:
-        explicit WorkerResultPool(size_t size) {
-            pool.reserve(size);
-            for (size_t i = 0; i < size; i++) {
-                pool.push_back(std::make_shared<CGetBurnInfoResult>());
-            }
-        }
-
-        std::shared_ptr<CGetBurnInfoResult> Acquire() {
-            CLockFreeGuard lock{syncFlag};
-            auto res = pool.back();
-            pool.pop_back();
-            return res;
-        }
-
-        void Release(std::shared_ptr<CGetBurnInfoResult> res) {
-            CLockFreeGuard lock{syncFlag};
-            pool.push_back(res);
-        }
-
-        std::vector<std::shared_ptr<CGetBurnInfoResult>> &GetContainer() {
-            return pool;
-        }
-
-      private:
-        std::atomic_bool syncFlag{};
-        std::vector<std::shared_ptr<CGetBurnInfoResult>> pool;
-    };
-
     auto nWorkers = DfTxTaskPool->GetAvailableThreads();
     if (static_cast<size_t>(height) < nWorkers) {
         nWorkers = height;
@@ -2052,7 +2022,7 @@ UniValue getburninfo(const JSONRPCRequest& request) {
     const auto chunkSize = height / nWorkers;
 
     TaskGroup g;
-    WorkerResultPool resultsPool{nWorkers};
+    WorkerResultPool<CGetBurnInfoResult> resultsPool{nWorkers};
 
     auto &pool = DfTxTaskPool->pool;
     auto processedHeight = initialResult.height;
