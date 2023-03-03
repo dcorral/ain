@@ -762,7 +762,8 @@ CCustomCSView::CCustomCSView() {
     CheckPrefixes();
 }
 
-CCustomCSView::CCustomCSView(CStorageKV *st, CHistoryWriters *writers) : CStorageView(st), writers(*writers) {
+CCustomCSView::CCustomCSView(CStorageKV &st, CHistoryWriters *writers) : CStorageView(new CFlushableStorageKV(st)),
+                                                                         writers(*writers) {
     CheckPrefixes();
 }
 
@@ -770,15 +771,15 @@ CCustomCSView CCustomCSView::CreateFlushableLayer(bool passWriters) {
     // disabling passWriters will not pass any of the history writers to the
     // new layer, any changes made will not be written to the history database
     if (passWriters)
-        return CCustomCSView{new CFlushableStorageKV(this->DB()), new CHistoryWriters{this->writers}};
+        return CCustomCSView{this->DB(), new CHistoryWriters{this->writers}};
 
-    return CCustomCSView{new CFlushableStorageKV(this->DB()), nullptr};
+    return CCustomCSView{this->DB(), nullptr};
 }
 
 CCustomCSView CCustomCSView::CreateFlushableLayer(CAccountHistoryStorage *historyView,
                                                   CBurnHistoryStorage *burnView,
                                                   CVaultHistoryStorage *vaultView) {
-    return CCustomCSView{new CFlushableStorageKV(this->DB()), new CHistoryWriters{historyView, burnView, vaultView}};
+    return CCustomCSView{this->DB(), new CHistoryWriters{historyView, burnView, vaultView}};
 }
 
 CCustomCSView CCustomCSView::Snapshot() {
@@ -787,7 +788,7 @@ CCustomCSView CCustomCSView::Snapshot() {
     if (levelDbStorage) {
         LogPrintf("DEBUG:: Creating new snapped view\n");
         auto snappedStore = levelDbStorage->Snapshot();
-        return CCustomCSView{new CFlushableStorageKV(snappedStore), new CHistoryWriters{this->writers}};
+        return CCustomCSView{snappedStore, new CHistoryWriters{this->writers}};
     }
     throw std::runtime_error("Error opening LevelDB database");
 }

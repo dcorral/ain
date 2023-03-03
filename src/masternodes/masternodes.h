@@ -496,7 +496,7 @@ public:
     static constexpr const int DbVersion = 1;
 
     CCustomCSView();
-    explicit CCustomCSView(CStorageKV *st, CHistoryWriters *writers);
+    explicit CCustomCSView(CStorageKV &st, CHistoryWriters *writers);
 
     // cache-upon-a-cache (not a copy!) constructor
     CCustomCSView(CCustomCSView &other) = delete;
