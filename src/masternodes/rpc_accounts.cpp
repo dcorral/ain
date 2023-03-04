@@ -2022,7 +2022,7 @@ UniValue getburninfo(const JSONRPCRequest& request) {
     const auto chunkSize = height / nWorkers;
 
     TaskGroup g;
-    WorkerResultPool<CGetBurnInfoResult> resultsPool{nWorkers};
+    BufferPool<CGetBurnInfoResult> resultsPool{nWorkers};
 
     auto &pool = DfTxTaskPool->pool;
     auto processedHeight = initialResult.height;
@@ -2120,7 +2120,7 @@ UniValue getburninfo(const JSONRPCRequest& request) {
 
     g.WaitForCompletion();
 
-    for (const auto &r : resultsPool.GetContainer()) {
+    for (const auto &r : resultsPool.GetBuffer()) {
         totalResult->burntDFI += r->burntDFI;
         totalResult->burntFee += r->burntFee;
         totalResult->auctionFee += r->auctionFee;

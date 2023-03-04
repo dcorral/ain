@@ -40,9 +40,24 @@ void TaskGroup::RemoveTask() {
     }
 }
 
-void TaskGroup::WaitForCompletion() {
+void TaskGroup::WaitForCompletion(bool checkForPrematureCompletion) {
+    if (checkForPrematureCompletion && tasks.load() == 0) return;
     std::unique_lock<std::mutex> l(cv_m);
     cv.wait(l, [&] { return tasks.load() == 0; });
+}
+
+template <typename T>
+std::shared_ptr<T> BufferPool<T>::Acquire() {
+    CLockFreeGuard lock{syncFlag};
+    auto res = pool.back();
+    pool.pop_back();
+    return res;
+}
+
+template <typename T>
+void BufferPool<T>::Release(std::shared_ptr<T> res) {
+    CLockFreeGuard lock{syncFlag};
+    pool.push_back(res);
 }
 
 std::unique_ptr<TaskPool> DfTxTaskPool;

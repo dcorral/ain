@@ -2,6 +2,7 @@
 #define DEFI_MASTERNODES_THREADPOOL_H
 
 #include <boost/asio.hpp>
+#include <atomic>
 #include <condition_variable>
 
 static const int DEFAULT_DFTX_WORKERS=0;
@@ -33,38 +34,30 @@ class TaskGroup {
     public:
         void AddTask();
         void RemoveTask();
-        void WaitForCompletion();
+        void WaitForCompletion(bool checkForPrematureCompletion = true);
+        void MarkCancellation() { is_cancelled.store(true); }
+        bool IsCancelled() { return is_cancelled.load(); }
+
     private:
         std::atomic<uint64_t> tasks{0};
         std::mutex cv_m;
         std::condition_variable cv;
+        std::atomic_bool is_cancelled{false};
 };
 
 template <typename T>
-class WorkerResultPool {
+class BufferPool {
     public:
-    explicit WorkerResultPool(size_t size) {
+    explicit BufferPool(size_t size) {
         pool.reserve(size);
         for (size_t i = 0; i < size; i++) {
             pool.push_back(std::make_shared<T>());
         }
     }
 
-    std::shared_ptr<T> Acquire() {
-        CLockFreeGuard lock{syncFlag};
-        auto res = pool.back();
-        pool.pop_back();
-        return res;
-    }
-
-    void Release(std::shared_ptr<T> res) {
-        CLockFreeGuard lock{syncFlag};
-        pool.push_back(res);
-    }
-
-    std::vector<std::shared_ptr<T>> &GetContainer() {
-        return pool;
-    }
+    std::shared_ptr<T> Acquire();
+    void Release(std::shared_ptr<T> res);
+    std::vector<std::shared_ptr<T>> &GetBuffer() { return pool; }
 
     private:
     std::atomic_bool syncFlag{};
