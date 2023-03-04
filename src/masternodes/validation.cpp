@@ -512,6 +512,14 @@ static void ProcessLoanEvents(const CBlockIndex* pindex, CCustomCSView& cache, c
         auto &pool = DfTxTaskPool->pool;
         auto nWorkers = DfTxTaskPool->GetAvailableThreads();
 
+        struct VaultWithCollateralInfo {
+            CVaultId vaultId;
+            CBalances collaterals;
+            CCollateralLoans vaultAssets;
+            CVaultData vault;
+            CLoanSchemeData scheme;
+        };
+
         BufferPool<std::vector<VaultWithCollateralInfo>> resultsPool{nWorkers};
         TaskGroup g;
 
@@ -525,15 +533,20 @@ static void ProcessLoanEvents(const CBlockIndex* pindex, CCustomCSView& cache, c
         cache.ForEachVaultCollateral(
             [&](const CVaultId &vaultId, const CBalances &collaterals) {
                 g.AddTask();
-                boost::asio::post(pool, [&] {
+
+                CVaultId vaultIdCopy = vaultId;
+                CBalances assets = collaterals;
+                boost::asio::post(pool, [vaultId=vaultIdCopy, assets, &cache, pindex, useNextPrice, 
+                    requireLivePrice, &g, &resultsPool, &markCompleted, &errorAndShutdown] {
                     if (g.IsCancelled()) {
                         return;
                     }
 
                     auto collateral = cache.GetLoanCollaterals(
-                        vaultId, collaterals, pindex->nHeight, pindex->nTime, useNextPrice, requireLivePrice);
+                        vaultId, assets, pindex->nHeight, pindex->nTime, useNextPrice, requireLivePrice);
 
                     if (!collateral) {
+                        LogPrintf("ERROR: size: %d\n", assets.balances.size());
                         errorAndShutdown("unexpected collateral");
                         return;
                     }
@@ -556,18 +569,20 @@ static void ProcessLoanEvents(const CBlockIndex* pindex, CCustomCSView& cache, c
                     }
 
                     auto result = resultsPool.Acquire();
-                    result->push_back(VaultWithCollateralInfo{vaultId, collaterals, collateral, *vault, *scheme});
+                    result->push_back(VaultWithCollateralInfo{vaultId, assets, collateral, *vault, *scheme});
                     resultsPool.Release(result);
                     markCompleted();
                 });
                 return true;
             });
 
-        g.WaitForCompletion();
         if (g.IsCancelled()) {
             StartShutdown();
             return;
         }
+        
+        g.WaitForCompletion(true);
+
 
         for (auto &result: resultsPool.GetBuffer()) {
             for (auto &v: *result) {

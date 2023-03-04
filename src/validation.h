@@ -860,15 +860,6 @@ void ConsolidateRewards(CCustomCSView& view, int height,
     const std::vector<std::pair<CScript, CAmount>> &items,
     bool interruptOnShutdown, int numWorkers = 0);
 
-struct VaultWithCollateralInfo {
-    CVaultId vaultId;
-    CBalances collaterals;
-    CCollateralLoans vaultAssets;
-    CVaultData vault;
-    CLoanSchemeData scheme;
-};
-
-
 extern std::map<CScript, CBalances> mapBurnAmounts;
 
 extern std::vector<CTransactionRef>::size_type nPhantomBurnTx;

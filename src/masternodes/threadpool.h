@@ -4,6 +4,7 @@
 #include <boost/asio.hpp>
 #include <atomic>
 #include <condition_variable>
+#include <sync.h>
 
 static const int DEFAULT_DFTX_WORKERS=0;
 
@@ -55,8 +56,18 @@ class BufferPool {
         }
     }
 
-    std::shared_ptr<T> Acquire();
-    void Release(std::shared_ptr<T> res);
+    std::shared_ptr<T> Acquire() {
+        CLockFreeGuard lock{syncFlag};
+        auto res = pool.back();
+        pool.pop_back();
+        return res;
+    }
+
+    void Release(std::shared_ptr<T> res) {
+        CLockFreeGuard lock{syncFlag};
+        pool.push_back(res);
+    }
+
     std::vector<std::shared_ptr<T>> &GetBuffer() { return pool; }
 
     private:

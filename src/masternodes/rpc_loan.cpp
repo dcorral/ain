@@ -1417,7 +1417,7 @@ UniValue getloaninfo(const JSONRPCRequest& request) {
         return true;
     });
 
-    g.WaitForCompletion();
+    g.WaitForCompletion(true);
     // We use relaxed ordering to increment. Thread joins should in theory,
     // resolve have resulted in full barriers, but we ensure
     // to throw in a full barrier anyway. x86 arch might appear to work without
