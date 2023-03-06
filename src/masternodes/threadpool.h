@@ -57,21 +57,21 @@ class BufferPool {
     }
 
     std::shared_ptr<T> Acquire() {
-        CLockFreeGuard lock{syncFlag};
+        std::unique_lock l{m};
         auto res = pool.back();
         pool.pop_back();
         return res;
     }
 
     void Release(std::shared_ptr<T> res) {
-        CLockFreeGuard lock{syncFlag};
+        std::unique_lock l{m};
         pool.push_back(res);
     }
 
     std::vector<std::shared_ptr<T>> &GetBuffer() { return pool; }
 
     private:
-    std::atomic_bool syncFlag{};
+    AtomicMutex m{};
     std::vector<std::shared_ptr<T>> pool;
 };
 
